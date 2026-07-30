@@ -1,0 +1,14 @@
+{
+  "jobId": "GIS-2026-001",
+  "objective": "ตัดข้อมูลจุดปลูกตามขอบเขตโครงการ",
+  "operation": "ClipVector",
+  "preferredTool": "Auto",
+  "inputPath": "D:/GIS/data/planting_points.gpkg",
+  "secondaryInputPath": "D:/GIS/data/project_boundary.gpkg",
+  "outputPath": "D:/GIS/output/planting_points_clip.gpkg",
+  "targetCrs": "EPSG:32647",
+  "bufferDistanceMetres": 100,
+  "dissolve": false,
+  "overwrite": false,
+  "createdAt": "2026-07-30T16:40:00+07:00"
+}
