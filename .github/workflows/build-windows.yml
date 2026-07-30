@@ -1,0 +1,63 @@
+name: Build GISPlan Portable
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: |
+          dotnet restore src/GISPlan.Desktop/GISPlan.Desktop.csproj
+          dotnet restore tests/GISPlan.SmokeTests/GISPlan.SmokeTests.csproj
+
+      - name: Run smoke tests
+        run: dotnet run --project tests/GISPlan.SmokeTests/GISPlan.SmokeTests.csproj --configuration Release
+
+      - name: Publish portable EXE
+        shell: pwsh
+        run: ./scripts/build_portable.ps1 -Runtime win-x64 -Configuration Release
+
+      - name: No-admin static acceptance
+        shell: pwsh
+        run: ./scripts/test_no_admin.ps1 -ExePath ./dist/GISPlan-win-x64/GISPlan.exe
+
+      - name: Package artifact
+        shell: pwsh
+        run: Compress-Archive -Path ./dist/GISPlan-win-x64/* -DestinationPath ./dist/GISPlan-win-x64.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GISPlan-win-x64
+          path: |
+            dist/GISPlan-win-x64/**
+            dist/no_admin_test.json
+          if-no-files-found: error
+
+      - name: Create GitHub Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" ./dist/GISPlan-win-x64.zip --generate-notes --title "GISPlan ${{ github.ref_name }}"
