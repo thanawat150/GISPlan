@@ -24,16 +24,16 @@ public static class AppNavigation
 
         var home = MakeButton(thai ? "หน้าหลัก" : "Home");
         home.Enabled = false;
-        var data = MakeButton(thai ? "คลังข้อมูลภายนอก" : "External data");
+        var data = MakeButton(thai ? "ค้นและดาวน์โหลดข้อมูล" : "Find and download data");
         data.Click += (_, _) =>
         {
-            using var dataForm = new DataSourcesForm(new LocalizationService(UserPreferences.Load().LanguageCode));
+            using var dataForm = new OperationalDataSourcesForm(new LocalizationService(UserPreferences.Load().LanguageCode));
             dataForm.ShowDialog(form);
         };
         var separator = new ToolStripSeparator();
         var safety = new ToolStripLabel(thai
-            ? "ดาวน์โหลดเฉพาะเมื่อผู้ใช้ยืนยัน"
-            : "Downloads require confirmation")
+            ? "ค้น API จริง • ดาวน์โหลดผ่าน HTTPS • เก็บ SHA-256"
+            : "Live APIs • HTTPS downloads • SHA-256 records")
         {
             ForeColor = Color.FromArgb(148, 163, 184),
             Alignment = ToolStripItemAlignment.Right,
