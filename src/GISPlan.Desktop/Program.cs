@@ -14,6 +14,6 @@ internal static class Program
         {
             MessageBox.Show(e.Exception.Message, "GISPlan Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
-        Application.Run(new MainForm());
+        Application.Run(new StartupForm());
     }
 }
