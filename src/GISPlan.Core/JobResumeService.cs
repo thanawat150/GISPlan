@@ -72,6 +72,6 @@ public sealed class JobResumeService
         job.Overwrite = false;
         job.CreatedAt = DateTime.Now;
 
-        return await new GisJobRunner().RunAsync(job, runtime, progress, cancellationToken);
+        return await new SafeGisJobRunner().RunAsync(job, runtime, progress, cancellationToken);
     }
 }
