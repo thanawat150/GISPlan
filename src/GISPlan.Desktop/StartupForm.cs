@@ -11,17 +11,19 @@ public sealed class StartupForm : Form
 
     private readonly ComboBox _language = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 150 };
     private readonly CheckBox _simpleMode = new() { AutoSize = true };
-    private readonly TextBox _command = new() { Font = new Font("Segoe UI", 12F), Height = 36 };
-    private readonly Button _guideButton = new() { Width = 165, Height = 38 };
-    private readonly Button _prepareButton = new() { Width = 185, Height = 38 };
-    private readonly Button _openGuideButton = new() { Width = 180, Height = 36, Enabled = false };
+    private readonly TextBox _command = new() { Font = new Font("Segoe UI", 12F), Height = 42 };
+    private readonly ModernButton _guideButton = new() { Width = 170, Kind = ModernButtonKind.Primary };
+    private readonly ModernButton _prepareButton = new() { Width = 195, Kind = ModernButtonKind.Secondary };
+    private readonly ModernButton _openGuideButton = new() { Width = 205, Kind = ModernButtonKind.Success, Enabled = false };
     private readonly RichTextBox _assistantResult = new()
     {
         ReadOnly = true,
         BorderStyle = BorderStyle.None,
-        BackColor = SystemColors.Window,
+        BackColor = UiTheme.SurfaceMuted,
+        ForeColor = UiTheme.Text,
         Dock = DockStyle.Fill,
-        Font = new Font("Segoe UI", 10.5F)
+        Font = new Font("Segoe UI", 10.5F),
+        DetectUrls = false
     };
 
     private readonly TextBox _log = new()
@@ -29,19 +31,29 @@ public sealed class StartupForm : Form
         Multiline = true,
         ReadOnly = true,
         ScrollBars = ScrollBars.Vertical,
-        Dock = DockStyle.Fill
+        BorderStyle = BorderStyle.None,
+        BackColor = UiTheme.Navy,
+        ForeColor = Color.FromArgb(203, 213, 225),
+        Dock = DockStyle.Fill,
+        Font = new Font("Cascadia Mono", 9F)
     };
 
-    private readonly Button _newJobButton = new() { Width = 180, Height = 42 };
-    private readonly Button _resumeButton = new() { Width = 180, Height = 42 };
-    private readonly Button _detectButton = new() { Width = 160, Height = 42 };
-    private readonly Button _cancelButton = new() { Width = 120, Height = 42, Enabled = false };
-    private readonly Button _detailsButton = new() { Width = 190, Height = 34 };
-    private readonly Label _status = new() { AutoSize = true };
-    private readonly Label _subtitle = new() { AutoSize = true, ForeColor = Color.DimGray };
-    private readonly Label _languageLabel = new() { AutoSize = true, Margin = new Padding(0, 8, 4, 0) };
-    private readonly GroupBox _assistantGroup = new() { Dock = DockStyle.Fill, Padding = new Padding(12) };
-    private readonly GroupBox _runtimeGroup = new() { Dock = DockStyle.Fill, Padding = new Padding(10) };
+    private readonly ModernButton _newJobButton = new() { Height = 46, Kind = ModernButtonKind.Primary };
+    private readonly ModernButton _resumeButton = new() { Height = 46, Kind = ModernButtonKind.Secondary };
+    private readonly ModernButton _detectButton = new() { Height = 42, Kind = ModernButtonKind.Ghost };
+    private readonly ModernButton _cancelButton = new() { Height = 42, Kind = ModernButtonKind.Danger, Enabled = false };
+    private readonly ModernButton _detailsButton = new() { Height = 38, Kind = ModernButtonKind.Ghost };
+    private readonly StatusPill _status = new();
+
+    private readonly Label _subtitle = new();
+    private readonly Label _languageLabel = new();
+    private readonly Label _assistantTitle = new();
+    private readonly Label _assistantHint = new();
+    private readonly Label _quickTitle = new();
+    private readonly Label _quickHint = new();
+    private readonly Label _runtimeTitle = new();
+    private readonly Label _footerNote = new();
+    private readonly ModernCard _runtimeCard = new() { Dock = DockStyle.Top, Height = 270, BackColor = UiTheme.Navy, BorderColor = UiTheme.Navy };
 
     private CancellationTokenSource? _cts;
     private RuntimeInfo? _runtime;
@@ -55,9 +67,15 @@ public sealed class StartupForm : Form
 
         Text = "GISPlan";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(820, 650);
-        Size = new Size(980, 760);
-        Font = new Font("Segoe UI", 10F);
+        MinimumSize = new Size(980, 690);
+        Size = new Size(1180, 790);
+        UiTheme.ApplyForm(this);
+
+        UiTheme.StyleInput(_language);
+        UiTheme.StyleInput(_command);
+        _simpleMode.Font = new Font("Segoe UI", 9.5F);
+        _simpleMode.ForeColor = Color.White;
+        _simpleMode.BackColor = UiTheme.Navy;
 
         Controls.Add(BuildLayout());
         LoadLanguageOptions();
@@ -87,7 +105,7 @@ public sealed class StartupForm : Form
         };
         _detailsButton.Click += (_, _) =>
         {
-            _runtimeGroup.Visible = !_runtimeGroup.Visible;
+            _runtimeCard.Visible = !_runtimeCard.Visible;
             UpdateDetailsButtonText();
         };
         _language.SelectedIndexChanged += (_, _) => ChangeLanguage();
@@ -98,79 +116,252 @@ public sealed class StartupForm : Form
         var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(20),
+            BackColor = UiTheme.Background,
             ColumnCount = 1,
-            RowCount = 6
+            RowCount = 3,
+            Padding = new Padding(0)
         };
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 55));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 45));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
 
-        var header = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2 };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        root.Controls.Add(BuildHero(), 0, 0);
+        root.Controls.Add(BuildContent(), 0, 1);
+        root.Controls.Add(BuildFooter(), 0, 2);
+        return root;
+    }
 
-        var titlePanel = new FlowLayoutPanel
+    private Control BuildHero()
+    {
+        var hero = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = UiTheme.Navy,
+            Padding = new Padding(30, 22, 30, 20)
+        };
+
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        var brand = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false
+        };
+        var mark = new Label
+        {
+            Text = "G",
+            AutoSize = false,
+            Size = new Size(58, 58),
+            TextAlign = ContentAlignment.MiddleCenter,
+            BackColor = UiTheme.Primary,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold),
+            Margin = new Padding(0, 0, 16, 0)
+        };
+        var titleStack = new FlowLayoutPanel
         {
             AutoSize = true,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            Dock = DockStyle.Fill
+            Margin = new Padding(0, 4, 0, 0)
         };
-        titlePanel.Controls.Add(new Label
+        titleStack.Controls.Add(new Label
         {
             Text = "GISPlan",
             AutoSize = true,
-            Font = new Font(Font.FontFamily, 24F, FontStyle.Bold)
+            Font = new Font("Segoe UI Semibold", 25F, FontStyle.Bold),
+            ForeColor = Color.White,
+            Margin = new Padding(0)
         });
-        titlePanel.Controls.Add(_subtitle);
-        header.Controls.Add(titlePanel, 0, 0);
+        _subtitle.AutoSize = true;
+        _subtitle.MaximumSize = new Size(680, 0);
+        _subtitle.Font = new Font("Segoe UI", 10F);
+        _subtitle.ForeColor = Color.FromArgb(203, 213, 225);
+        _subtitle.Margin = new Padding(1, 2, 0, 0);
+        titleStack.Controls.Add(_subtitle);
+        brand.Controls.Add(mark);
+        brand.Controls.Add(titleStack);
+        layout.Controls.Add(brand, 0, 0);
 
-        var preferencePanel = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
-        preferencePanel.Controls.Add(_languageLabel);
-        preferencePanel.Controls.Add(_language);
-        preferencePanel.Controls.Add(_simpleMode);
-        header.Controls.Add(preferencePanel, 1, 0);
-        root.Controls.Add(header, 0, 0);
+        var preferences = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+            Margin = new Padding(0, 8, 0, 0)
+        };
+        _languageLabel.AutoSize = true;
+        _languageLabel.ForeColor = Color.FromArgb(203, 213, 225);
+        _languageLabel.Margin = new Padding(0, 10, 8, 0);
+        _language.BackColor = Color.White;
+        _simpleMode.Margin = new Padding(16, 10, 0, 0);
+        preferences.Controls.AddRange([_languageLabel, _language, _simpleMode]);
+        layout.Controls.Add(preferences, 1, 0);
 
-        var assistantLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
-        assistantLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        assistantLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        assistantLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        assistantLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        hero.Controls.Add(layout);
+        return hero;
+    }
+
+    private Control BuildContent()
+    {
+        var shell = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(24, 22, 24, 18),
+            ColumnCount = 2,
+            RowCount = 1,
+            BackColor = UiTheme.Background
+        };
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66));
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+
+        shell.Controls.Add(BuildAssistantCard(), 0, 0);
+        shell.Controls.Add(BuildRightColumn(), 1, 0);
+        return shell;
+    }
+
+    private Control BuildAssistantCard()
+    {
+        var card = new ModernCard { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 10, 0) };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5 };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _assistantTitle.Font = new Font("Segoe UI Semibold", 18F, FontStyle.Bold);
+        _assistantTitle.ForeColor = UiTheme.Text;
+        _assistantTitle.AutoSize = true;
+        _assistantHint.AutoSize = true;
+        _assistantHint.MaximumSize = new Size(700, 0);
+        _assistantHint.ForeColor = UiTheme.MutedText;
+        _assistantHint.Margin = new Padding(0, 4, 0, 14);
+
         _command.Dock = DockStyle.Top;
-        assistantLayout.Controls.Add(_command, 0, 0);
-
-        var assistantActions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top, Padding = new Padding(0, 8, 0, 8) };
-        assistantActions.Controls.AddRange([_guideButton, _prepareButton]);
-        assistantLayout.Controls.Add(assistantActions, 0, 1);
-        assistantLayout.Controls.Add(_assistantResult, 0, 2);
-        assistantLayout.Controls.Add(_openGuideButton, 0, 3);
-        _assistantGroup.Controls.Add(assistantLayout);
-        root.Controls.Add(_assistantGroup, 0, 1);
+        _command.Margin = new Padding(0, 0, 0, 10);
 
         var actions = new FlowLayoutPanel
         {
-            AutoSize = true,
             Dock = DockStyle.Top,
-            Padding = new Padding(0, 12, 0, 10)
-        };
-        actions.Controls.AddRange([_newJobButton, _resumeButton, _detectButton, _cancelButton, _detailsButton]);
-        root.Controls.Add(actions, 0, 2);
-
-        _runtimeGroup.Controls.Add(_log);
-        root.Controls.Add(_runtimeGroup, 0, 3);
-        root.Controls.Add(_status, 0, 4);
-        root.Controls.Add(new Label
-        {
-            Text = "GISPlan keeps source data unchanged and asks before running supported workflows.",
             AutoSize = true,
-            ForeColor = Color.Gray
-        }, 0, 5);
-        return root;
+            FlowDirection = FlowDirection.LeftToRight,
+            Padding = new Padding(0, 0, 0, 12)
+        };
+        actions.Controls.AddRange([_guideButton, _prepareButton]);
+
+        var resultSurface = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = UiTheme.SurfaceMuted,
+            Padding = new Padding(16),
+            Margin = new Padding(0, 2, 0, 12)
+        };
+        resultSurface.Controls.Add(_assistantResult);
+
+        _openGuideButton.Anchor = AnchorStyles.Left;
+        layout.Controls.Add(_assistantTitle, 0, 0);
+        layout.Controls.Add(_assistantHint, 0, 1);
+        layout.Controls.Add(_command, 0, 2);
+        layout.Controls.Add(resultSurface, 0, 3);
+        layout.Controls.Add(_openGuideButton, 0, 4);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private Control BuildRightColumn()
+    {
+        var stack = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoScroll = true,
+            Margin = new Padding(10, 0, 0, 0),
+            Padding = new Padding(0)
+        };
+
+        var quickCard = new ModernCard { Height = 304, Margin = new Padding(0, 0, 0, 14) };
+        var quickLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6 };
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        quickLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _quickTitle.AutoSize = true;
+        _quickTitle.Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold);
+        _quickTitle.ForeColor = UiTheme.Text;
+        _quickHint.AutoSize = true;
+        _quickHint.MaximumSize = new Size(320, 0);
+        _quickHint.ForeColor = UiTheme.MutedText;
+        _quickHint.Margin = new Padding(0, 3, 0, 14);
+
+        foreach (var button in new[] { _newJobButton, _resumeButton, _detectButton, _detailsButton })
+        {
+            button.Dock = DockStyle.Top;
+            button.Margin = new Padding(0, 0, 0, 9);
+        }
+        _cancelButton.Dock = DockStyle.Top;
+        _cancelButton.Margin = new Padding(0, 0, 0, 0);
+
+        quickLayout.Controls.Add(_quickTitle, 0, 0);
+        quickLayout.Controls.Add(_quickHint, 0, 1);
+        quickLayout.Controls.Add(_newJobButton, 0, 2);
+        quickLayout.Controls.Add(_resumeButton, 0, 3);
+        quickLayout.Controls.Add(_detectButton, 0, 4);
+
+        var bottomActions = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.LeftToRight };
+        bottomActions.Controls.AddRange([_detailsButton, _cancelButton]);
+        quickLayout.Controls.Add(bottomActions, 0, 5);
+        quickCard.Controls.Add(quickLayout);
+
+        var runtimeLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        runtimeLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        runtimeLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _runtimeTitle.AutoSize = true;
+        _runtimeTitle.Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold);
+        _runtimeTitle.ForeColor = Color.White;
+        _runtimeTitle.Margin = new Padding(0, 0, 0, 10);
+        runtimeLayout.Controls.Add(_runtimeTitle, 0, 0);
+        runtimeLayout.Controls.Add(_log, 0, 1);
+        _runtimeCard.Controls.Add(runtimeLayout);
+
+        stack.Controls.Add(quickCard);
+        stack.Controls.Add(_runtimeCard);
+        stack.SizeChanged += (_, _) =>
+        {
+            var width = Math.Max(260, stack.ClientSize.Width - (stack.VerticalScroll.Visible ? 24 : 4));
+            quickCard.Width = width;
+            _runtimeCard.Width = width;
+        };
+        return stack;
+    }
+
+    private Control BuildFooter()
+    {
+        var footer = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.White,
+            Padding = new Padding(24, 10, 24, 8)
+        };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        _footerNote.AutoSize = true;
+        _footerNote.ForeColor = UiTheme.MutedText;
+        _footerNote.Anchor = AnchorStyles.Left;
+        layout.Controls.Add(_footerNote, 0, 0);
+        layout.Controls.Add(_status, 1, 0);
+        footer.Controls.Add(layout);
+        return footer;
     }
 
     private void LoadLanguageOptions()
@@ -193,6 +384,7 @@ public sealed class StartupForm : Form
 
     private void ApplyLanguage()
     {
+        var thai = _localizer.LanguageCode.StartsWith("th", StringComparison.OrdinalIgnoreCase);
         Text = _localizer.Text("app.title");
         _subtitle.Text = _localizer.Text("app.subtitle");
         _languageLabel.Text = _localizer.Text("language");
@@ -201,25 +393,33 @@ public sealed class StartupForm : Form
         _guideButton.Text = _localizer.Text("assistant.guide");
         _prepareButton.Text = _localizer.Text("assistant.prepare");
         _openGuideButton.Text = _localizer.Text("assistant.open");
-        _assistantGroup.Text = _localizer.Text("assistant.result");
+        _assistantTitle.Text = thai ? "ผู้ช่วยงาน GIS" : "GIS Assistant";
+        _assistantHint.Text = thai
+            ? "อธิบายงานที่ต้องการด้วยภาษาปกติ ระบบจะบอกขั้นตอนหรือเตรียมหน้าทำงานให้"
+            : "Describe the result you need. GISPlan will guide you or prepare a supported workflow.";
+        _quickTitle.Text = thai ? "เริ่มต้นอย่างรวดเร็ว" : "Quick start";
+        _quickHint.Text = thai ? "เลือกเริ่มงานใหม่ ทำงานต่อ หรือตรวจโปรแกรม GIS ในเครื่อง" : "Start a task, resume previous work, or check installed GIS software.";
+        _runtimeTitle.Text = _localizer.Text("runtime_status");
         _newJobButton.Text = _localizer.Text("new_job");
         _resumeButton.Text = _localizer.Text("resume_job");
         _detectButton.Text = _localizer.Text("detect_runtime");
         _cancelButton.Text = _localizer.Text("cancel");
-        _runtimeGroup.Text = _localizer.Text("runtime_status");
-        if (string.IsNullOrWhiteSpace(_status.Text) || _status.Text == "พร้อมใช้งาน" || _status.Text == "Ready")
-            _status.Text = _localizer.Text("ready");
+        _footerNote.Text = thai
+            ? "ไฟล์ต้นฉบับจะไม่ถูกแก้ไข และระบบจะขอยืนยันก่อนเริ่มงาน"
+            : "Source files remain unchanged and supported workflows require confirmation.";
+        if (string.IsNullOrWhiteSpace(_status.Text) || _status.Text is "พร้อมใช้งาน" or "Ready")
+            _status.SetNeutral(_localizer.Text("ready"));
         UpdateDetailsButtonText();
     }
 
     private void ApplySimpleMode()
     {
-        _runtimeGroup.Visible = !_simpleMode.Checked;
+        _runtimeCard.Visible = !_simpleMode.Checked;
         UpdateDetailsButtonText();
     }
 
     private void UpdateDetailsButtonText() =>
-        _detailsButton.Text = _runtimeGroup.Visible
+        _detailsButton.Text = _runtimeCard.Visible
             ? _localizer.Text("hide_details")
             : _localizer.Text("show_details");
 
@@ -274,14 +474,14 @@ public sealed class StartupForm : Form
             Append($"ArcGIS Pro / ArcPy: {ShowPath(_runtime.ArcGisPropyPath)}");
             foreach (var warning in _runtime.Warnings)
                 Append("Warning: " + warning);
-            _status.Text = _runtime.HasQgis || _runtime.HasGdal || _runtime.HasArcGis
-                ? _localizer.Text("status.runtime_checked")
-                : _localizer.Text("status.runtime_missing");
+            var ready = _runtime.HasQgis || _runtime.HasGdal || _runtime.HasArcGis;
+            if (ready) _status.SetSuccess(_localizer.Text("status.runtime_checked"));
+            else _status.SetWarning(_localizer.Text("status.runtime_missing"));
         }
         catch (Exception ex)
         {
             Append("Runtime Error: " + ex.Message);
-            _status.Text = "rework";
+            _status.SetError("rework");
         }
         finally
         {
@@ -311,14 +511,14 @@ public sealed class StartupForm : Form
             var progress = new Progress<string>(text =>
             {
                 Append(text);
-                _status.Text = text;
+                _status.SetBusy(text);
             });
             var result = await new JobResumeService().ResumeAsync(dialog.FileName, _runtime, progress, _cts.Token);
             Append($"Resume result: {result.Status} — {result.Message}");
             Append($"Job folder: {result.JobDirectory}");
             if (!string.IsNullOrWhiteSpace(result.OutputPath))
                 Append($"Output: {result.OutputPath}");
-            _status.Text = result.Status;
+            SetResultStatus(result.Status);
 
             var openPath = !string.IsNullOrWhiteSpace(result.OutputPath)
                 ? Path.GetDirectoryName(result.OutputPath)
@@ -333,12 +533,12 @@ public sealed class StartupForm : Form
         catch (OperationCanceledException)
         {
             Append(_localizer.Text("status.cancelled"));
-            _status.Text = "cancelled";
+            _status.SetWarning(_localizer.Text("status.cancelled"));
         }
         catch (Exception ex)
         {
             Append("Resume Error: " + ex.Message);
-            _status.Text = "rework";
+            _status.SetError("rework");
         }
         finally
         {
@@ -356,7 +556,14 @@ public sealed class StartupForm : Form
         _guideButton.Enabled = !busy;
         _prepareButton.Enabled = !busy;
         _cancelButton.Enabled = busy;
-        if (status is not null) _status.Text = status;
+        if (status is not null) _status.SetBusy(status);
+    }
+
+    private void SetResultStatus(string status)
+    {
+        if (status is "passed" or "passed_with_warnings") _status.SetSuccess(status);
+        else if (status is "cancelled" or "missing_runtime") _status.SetWarning(status);
+        else _status.SetError(status);
     }
 
     private void Append(string text) =>

@@ -50,6 +50,21 @@ var unsafeBuffer = new GisJob
 var unsafeResult = await new SafeGisJobRunner().RunAsync(unsafeBuffer, new RuntimeInfo());
 Check(!unsafeResult.Success && unsafeResult.Status == "rework", "Geographic CRS buffer is blocked before processing");
 
+var registry = new ExternalDataSourceRegistry();
+Check(registry.Sources.Count >= 8, "External data registry includes core official/open providers");
+Check(registry.Sources.Select(x => x.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() == registry.Sources.Count,
+    "External data provider IDs are unique");
+Check(registry.Sources.All(x => x.PortalUri.Scheme == Uri.UriSchemeHttps),
+    "External data portals use HTTPS");
+Check(registry.Sources.All(x => !string.IsNullOrWhiteSpace(x.LicenseNote) && !string.IsNullOrWhiteSpace(x.Attribution)),
+    "Every external source records license and attribution guidance");
+Check(registry.Sources.Any(x => x.Keywords.Contains("dem", StringComparer.OrdinalIgnoreCase)),
+    "External data registry includes elevation/DEM sources");
+Check(registry.Filter("ป่าชายเลน").Any(x => x.Id == "dmcr-change"),
+    "External data filtering finds official mangrove source");
+Check(registry.Filter("dem").Any(x => x.Id is "copernicus-stac" or "nasa-earthdata-dem" or "jaxa-aw3d30"),
+    "External data filtering finds DEM sources");
+
 var temp = Path.Combine(Path.GetTempPath(), "GISPlanSmoke-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(temp);
 try
