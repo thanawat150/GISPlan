@@ -25,6 +25,31 @@ var restored = JsonSerializer.Deserialize<GisJob>(json, JsonDefaults.Options);
 Check(restored?.Operation == GisOperation.ReprojectVector, "JSON enum round-trip");
 Check(restored?.TargetCrs == "EPSG:32647", "CRS round-trip");
 
+var thai = new LocalizationService("th-TH");
+var english = new LocalizationService("en-US");
+Check(thai.Text("assistant.guide") == "สอนว่าไปตรงไหน", "Thai localization");
+Check(english.Text("assistant.guide") == "Show me where", "English localization");
+
+var guide = new GuidedAssistantService(thai);
+var bufferGuide = guide.Find("อยากทำ buffer 100 เมตร");
+Check(bufferGuide.SuggestedOperation == GisOperation.BufferVector, "Assistant routes buffer request");
+Check(bufferGuide.CanPrepareAutomatically, "Assistant marks supported automation");
+var mapGuide = guide.Find("อยากปรับสีขอบเขตและทำแผนที่ PDF");
+Check(mapGuide.Id == "map", "Assistant routes map styling request");
+Check(!mapGuide.CanPrepareAutomatically, "Assistant does not claim unsupported map automation");
+
+var unsafeBuffer = new GisJob
+{
+    JobId = "TEST-BUFFER-GEOGRAPHIC",
+    Operation = GisOperation.BufferVector,
+    InputPath = "input.gpkg",
+    OutputPath = "buffer.gpkg",
+    TargetCrs = "EPSG:4326",
+    BufferDistanceMetres = 100
+};
+var unsafeResult = await new SafeGisJobRunner().RunAsync(unsafeBuffer, new RuntimeInfo());
+Check(!unsafeResult.Success && unsafeResult.Status == "rework", "Geographic CRS buffer is blocked before processing");
+
 var temp = Path.Combine(Path.GetTempPath(), "GISPlanSmoke-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(temp);
 try
