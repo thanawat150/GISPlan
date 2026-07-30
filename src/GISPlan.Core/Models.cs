@@ -42,6 +42,7 @@ public sealed class RuntimeInfo
 {
     public DateTime DetectedAt { get; set; } = DateTime.Now;
     public string? QgisProcessPath { get; set; }
+    public string? QgisGuiPath { get; set; }
     public string? OgrInfoPath { get; set; }
     public string? Ogr2OgrPath { get; set; }
     public string? GdalSrsInfoPath { get; set; }
@@ -50,6 +51,7 @@ public sealed class RuntimeInfo
     public List<string> Warnings { get; set; } = [];
 
     [JsonIgnore] public bool HasQgis => !string.IsNullOrWhiteSpace(QgisProcessPath);
+    [JsonIgnore] public bool HasQgisGui => !string.IsNullOrWhiteSpace(QgisGuiPath);
     [JsonIgnore] public bool HasGdal => !string.IsNullOrWhiteSpace(OgrInfoPath) && !string.IsNullOrWhiteSpace(Ogr2OgrPath);
     [JsonIgnore] public bool HasArcGis => !string.IsNullOrWhiteSpace(ArcGisPropyPath);
 }

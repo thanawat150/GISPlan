@@ -25,6 +25,10 @@ var restored = JsonSerializer.Deserialize<GisJob>(json, JsonDefaults.Options);
 Check(restored?.Operation == GisOperation.ReprojectVector, "JSON enum round-trip");
 Check(restored?.TargetCrs == "EPSG:32647", "CRS round-trip");
 
+var runtimeJson = JsonSerializer.Serialize(new RuntimeInfo { QgisGuiPath = @"C:\QGIS\bin\qgis-bin.exe" }, JsonDefaults.Options);
+var runtimeRestored = JsonSerializer.Deserialize<RuntimeInfo>(runtimeJson, JsonDefaults.Options);
+Check(runtimeRestored?.QgisGuiPath?.EndsWith("qgis-bin.exe", StringComparison.OrdinalIgnoreCase) == true, "QGIS GUI path round-trip");
+
 var thai = new LocalizationService("th-TH");
 var english = new LocalizationService("en-US");
 Check(thai.Text("assistant.guide") == "สอนว่าไปตรงไหน", "Thai localization");
@@ -62,8 +66,22 @@ Check(registry.Sources.Any(x => x.Keywords.Contains("dem", StringComparer.Ordina
     "External data registry includes elevation/DEM sources");
 Check(registry.Filter("ป่าชายเลน").Any(x => x.Id == "dmcr-change"),
     "External data filtering finds official mangrove source");
-Check(registry.Filter("dem").Any(x => x.Id is "copernicus-stac" or "nasa-earthdata-dem" or "jaxa-aw3d30"),
+Check(registry.Filter("dem").Any(x => x.Id is "copernicus-stac" or "nasa-earthdata" or "jaxa-aw3d30"),
     "External data filtering finds DEM sources");
+Check(registry.Sources.Single(x => x.Id == "nasa-earthdata").AccessKind == DataAccessKind.Cmr,
+    "NASA provider uses the live CMR API");
+
+Check(ExternalCatalogSearchService.TryParseBoundingBox("97.3,5.6,105.7,20.5", out var thailandBbox) && thailandBbox is { Length: 4 },
+    "Valid Thailand BBOX is accepted");
+Check(!ExternalCatalogSearchService.TryParseBoundingBox("105,20,97,5", out _),
+    "Reversed BBOX is rejected");
+Check(!ExternalCatalogSearchService.TryParseBoundingBox("not-a-bbox", out _),
+    "Malformed BBOX is rejected");
+
+var directResult = new ExternalDataResult(
+    "test", "Example", "", "GEOTIFF", new Uri("https://example.com/item"),
+    new Uri("https://example.com/data/example.tif"), null, "license", "source", false);
+Check(ExternalCatalogSearchService.SuggestFileName(directResult) == "example.tif", "Download filename is derived safely");
 
 var temp = Path.Combine(Path.GetTempPath(), "GISPlanSmoke-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(temp);

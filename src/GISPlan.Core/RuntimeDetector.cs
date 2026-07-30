@@ -11,6 +11,7 @@ public sealed class RuntimeDetector
         var runtime = new RuntimeInfo
         {
             QgisProcessPath = FindExecutableOnPath("qgis_process.exe", "qgis_process-qgis.bat", "qgis_process-qgis-ltr.bat"),
+            QgisGuiPath = FindExecutableOnPath("qgis-bin.exe", "qgis.exe", "qgis-ltr-bin.exe", "qgis-ltr.exe"),
             OgrInfoPath = FindExecutableOnPath("ogrinfo.exe"),
             Ogr2OgrPath = FindExecutableOnPath("ogr2ogr.exe"),
             GdalSrsInfoPath = FindExecutableOnPath("gdalsrsinfo.exe"),
@@ -25,6 +26,11 @@ public sealed class RuntimeDetector
                 Path.Combine(qgisRoot, "bin", "qgis_process.exe"),
                 Path.Combine(qgisRoot, "bin", "qgis_process-qgis.bat"),
                 Path.Combine(qgisRoot, "bin", "qgis_process-qgis-ltr.bat"));
+            runtime.QgisGuiPath ??= FirstExisting(
+                Path.Combine(qgisRoot, "bin", "qgis-bin.exe"),
+                Path.Combine(qgisRoot, "bin", "qgis.exe"),
+                Path.Combine(qgisRoot, "bin", "qgis-ltr-bin.exe"),
+                Path.Combine(qgisRoot, "bin", "qgis-ltr.exe"));
             runtime.OgrInfoPath ??= FirstExisting(Path.Combine(qgisRoot, "bin", "ogrinfo.exe"));
             runtime.Ogr2OgrPath ??= FirstExisting(Path.Combine(qgisRoot, "bin", "ogr2ogr.exe"));
             runtime.GdalSrsInfoPath ??= FirstExisting(Path.Combine(qgisRoot, "bin", "gdalsrsinfo.exe"));
@@ -35,6 +41,7 @@ public sealed class RuntimeDetector
             Path.Combine(programFiles, "ArcGIS", "Pro", "bin", "Python", "Scripts", "propy.bat"));
 
         if (!runtime.HasQgis) runtime.Warnings.Add("ไม่พบ QGIS Processing");
+        if (!runtime.HasQgisGui) runtime.Warnings.Add("ไม่พบ QGIS Desktop สำหรับเปิดไฟล์บนแผนที่");
         if (!runtime.HasGdal) runtime.Warnings.Add("ไม่พบ GDAL/OGR ครบชุด");
         if (!runtime.HasArcGis) runtime.Warnings.Add("ไม่พบ ArcGIS Pro Python หรือ License runtime");
         if (string.IsNullOrWhiteSpace(runtime.PythonPath)) runtime.Warnings.Add("ไม่พบ Python แบบ User/System PATH");
@@ -53,6 +60,7 @@ public sealed class RuntimeDetector
             if (runtime is null) return null;
 
             runtime.QgisProcessPath = ValidOrNull(runtime.QgisProcessPath);
+            runtime.QgisGuiPath = ValidOrNull(runtime.QgisGuiPath);
             runtime.OgrInfoPath = ValidOrNull(runtime.OgrInfoPath);
             runtime.Ogr2OgrPath = ValidOrNull(runtime.Ogr2OgrPath);
             runtime.GdalSrsInfoPath = ValidOrNull(runtime.GdalSrsInfoPath);
