@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/thanawat150/GISPlan/schemas/gis_job.schema.json",
+  "title": "GISPlan GIS Job",
+  "type": "object",
+  "required": ["jobId", "objective", "operation", "preferredTool", "inputPath", "outputPath", "overwrite"],
+  "properties": {
+    "jobId": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "operation": {
+      "enum": ["Inspect", "ReprojectVector", "ClipVector", "BufferVector", "ConvertVector"]
+    },
+    "preferredTool": { "enum": ["Auto", "Qgis", "ArcGis", "Gdal"] },
+    "inputPath": { "type": "string", "minLength": 1 },
+    "secondaryInputPath": { "type": ["string", "null"] },
+    "outputPath": { "type": "string" },
+    "targetCrs": {
+      "type": ["string", "null"],
+      "pattern": "^EPSG:[0-9]+$"
+    },
+    "bufferDistanceMetres": { "type": "number", "exclusiveMinimum": 0 },
+    "dissolve": { "type": "boolean" },
+    "overwrite": { "type": "boolean" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "operation": { "const": "ClipVector" } } },
+      "then": { "required": ["secondaryInputPath"] }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "ReprojectVector" } } },
+      "then": { "required": ["targetCrs"] }
+    }
+  ],
+  "additionalProperties": false
+}
