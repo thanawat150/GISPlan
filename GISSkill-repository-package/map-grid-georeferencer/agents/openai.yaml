@@ -1,0 +1,4 @@
+interface:
+  display_name: "Map Grid Georeferencer"
+  short_description: "Georeference grid-labeled maps and export validated KML boundaries"
+  default_prompt: "Inspect this map or PDF, validate its grid and CRS evidence, georeference it from confirmed ticks or GCPs, extract the highlighted boundary, and deliver KML with QA findings."

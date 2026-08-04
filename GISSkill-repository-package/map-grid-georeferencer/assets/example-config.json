@@ -1,0 +1,26 @@
+{
+  "source_crs": "EPSG:32647",
+  "axis_calibration": {
+    "x_ticks": [
+      {"pixel_x": 421, "easting": 667500},
+      {"pixel_x": 849, "easting": 670000},
+      {"pixel_x": 1280, "easting": 672500}
+    ],
+    "y_ticks": [
+      {"pixel_y": 535, "northing": 1515000},
+      {"pixel_y": 964, "northing": 1512500},
+      {"pixel_y": 1395, "northing": 1510000}
+    ]
+  },
+  "boundary_detection": {
+    "s_min": 130,
+    "v_min": 90,
+    "close_kernel": 5,
+    "close_iterations": 2,
+    "min_contour_area_px": 10000,
+    "simplify_px": 3
+  },
+  "feature_name": "ขอบเขตบางกระเจ้า",
+  "description": "ตัวอย่างสกัดจากเส้นขอบสีแดงและปรับตำแหน่งด้วยค่ากริดขอบแผนที่ ต้องตรวจสอบกับข้อมูลควบคุมอิสระก่อนใช้งานทางการ",
+  "confidence": "moderate"
+}

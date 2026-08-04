@@ -1,0 +1,31 @@
+{
+  "input": "/mnt/data/dcf2ab9a-e4e2-4ec0-8ae7-6fcf9898feb3.png",
+  "image_width": 1448,
+  "image_height": 2048,
+  "source_crs": "EPSG:32647",
+  "registration": {
+    "mode": "axis_calibration",
+    "x_residuals_map_units": [
+      2.920513251447119,
+      -5.8206981043331325,
+      2.9001848528860137
+    ],
+    "y_residuals_map_units": [
+      -1.9424879357684404,
+      3.8759620040655136,
+      -1.933474070392549
+    ],
+    "x_rmse": 4.115863467713468,
+    "y_rmse": 2.7407214876406676
+  },
+  "pixel_polygon_area": 456948.0,
+  "map_polygon_area": 15463671.874596382,
+  "map_bounds": [
+    666490.1190431018,
+    1510416.6704224432,
+    671693.823148354,
+    1515643.405185856
+  ],
+  "geometry_valid": true,
+  "warning": "Output is not survey/legal grade without authoritative control and independent checkpoints."
+}
